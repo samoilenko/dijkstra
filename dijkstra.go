@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"math"
 )
 
@@ -51,25 +51,30 @@ func (d *Dijkstra) inspectNeighbors(current string) {
 
 func (d *Dijkstra) Calculate(from string) (weight int32, path string, err error) {
 	if _, ok := d.graph.Vertices[from]; !ok {
-		return 0, "", errors.New(from + " does not exist in Graph")
+		return 0, "", fmt.Errorf("%s does not exist in Graph", from)
 	}
 
-	if _, ok := d.visited[from]; !ok {
-		d.visited[from] = &VisitedVertex{Path: from}
+	nextVertexName := from
+	for {
+		currentVertex, ok := d.visited[nextVertexName]
+		if !ok {
+			currentVertex = &VisitedVertex{Path: nextVertexName}
+			d.visited[nextVertexName] = currentVertex
+		}
+
+		currentVertex.IsCalculated = true
+		d.inspectNeighbors(nextVertexName)
+
+		// finds new vertex to calculate
+		newVertexSource := d.getNextVertexName()
+
+		// if all vertices is calculated, return results
+		if newVertexSource == "" {
+			return currentVertex.Weight, currentVertex.Path, nil
+		} else {
+			nextVertexName = newVertexSource
+		}
 	}
-
-	d.visited[from].IsCalculated = true
-	d.inspectNeighbors(from)
-
-	// finds new vertex to calculate
-	newVertexSource := d.getNextVertexName()
-
-	// if all vertices is calculated, return results
-	if newVertexSource == "" {
-		return d.visited[from].Weight, d.visited[from].Path, nil
-	}
-
-	return d.Calculate(newVertexSource)
 }
 
 func newDijkstra(graph *Graph) *Dijkstra {
