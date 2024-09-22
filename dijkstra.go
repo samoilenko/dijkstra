@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 )
 
 type VisitedVertex struct {
@@ -14,23 +13,13 @@ type VisitedVertex struct {
 type Dijkstra struct {
 	graph   *Graph
 	visited map[string]*VisitedVertex // visited/calculated graph's vertices
-}
-
-func (d *Dijkstra) getNextVertexName() string {
-	var vertexName string
-	var min int32 = math.MaxInt32
-	for visitedVertexName, visitedVertex := range d.visited {
-		if !visitedVertex.IsCalculated && min > visitedVertex.Weight {
-			vertexName = visitedVertexName
-			min = visitedVertex.Weight
-		}
-	}
-
-	return vertexName
+	heap    *HeapMin
 }
 
 func (d *Dijkstra) inspectNeighbors(current string) {
 	for neighborVertexName, neighborWeight := range d.graph.Vertices[current] {
+		destinationWeight := d.visited[current].Weight + neighborWeight
+
 		// if a vertex was visited earlier and new weight will be bigger that existing one
 		// then this path will be longer and it will be skipped
 		neighborVertex, ok := d.visited[neighborVertexName]
@@ -42,10 +31,11 @@ func (d *Dijkstra) inspectNeighbors(current string) {
 		}
 
 		// accumulate weight
-		neighborVertex.Weight = d.visited[current].Weight + neighborWeight
+		neighborVertex.Weight = destinationWeight
 
 		// increase path
 		neighborVertex.Path = d.visited[current].Path + neighborVertexName
+		d.heap.Add(neighborVertexName, destinationWeight)
 	}
 }
 
@@ -65,14 +55,13 @@ func (d *Dijkstra) Calculate(from string) (weight int32, path string, err error)
 		currentVertex.IsCalculated = true
 		d.inspectNeighbors(nextVertexName)
 
-		// finds new vertex to calculate
-		newVertexSource := d.getNextVertexName()
+		newVertexSourceName := d.heap.GetRoot()
 
 		// if all vertices is calculated, return results
-		if newVertexSource == "" {
+		if newVertexSourceName == "" {
 			return currentVertex.Weight, currentVertex.Path, nil
 		} else {
-			nextVertexName = newVertexSource
+			nextVertexName = newVertexSourceName
 		}
 	}
 }
@@ -81,5 +70,6 @@ func newDijkstra(graph *Graph) *Dijkstra {
 	return &Dijkstra{
 		graph:   graph,
 		visited: make(map[string]*VisitedVertex),
+		heap:    &HeapMin{tree: make([]*Item, 0)},
 	}
 }
