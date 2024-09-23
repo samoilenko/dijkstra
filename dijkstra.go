@@ -22,7 +22,7 @@ func (d *Dijkstra) inspectNeighbors(current string) {
 	neighbors, _ := d.graph.Vertices.Get(current)
 	currentVertex, _ := d.visited.Get(current)
 
-	neighbors.Iter(func(neighborVertexName string, neighborWeight int32) (stop bool) {
+	for neighborVertexName, neighborWeight := range neighbors.Iterator() {
 		destinationWeight := currentVertex.Weight + neighborWeight
 
 		// if a vertex was visited earlier and new weight will be bigger that existing one
@@ -33,7 +33,7 @@ func (d *Dijkstra) inspectNeighbors(current string) {
 			visitedNeighbor = &VisitedVertex{}
 			d.visited.Put(neighborVertexName, visitedNeighbor)
 		} else if destinationWeight >= visitedNeighbor.Weight {
-			return
+			continue
 		}
 
 		// accumulate weight
@@ -43,9 +43,7 @@ func (d *Dijkstra) inspectNeighbors(current string) {
 		visitedNeighbor.Path = currentVertex.Path + neighborVertexName
 
 		d.heap.Add(neighborVertexName, destinationWeight)
-
-		return false
-	})
+	}
 }
 
 func (d *Dijkstra) Calculate(from string) (weight int32, path string, err error) {
