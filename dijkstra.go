@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/samoilenko/swiss"
 )
 
 type VisitedVertex struct {
@@ -12,44 +14,51 @@ type VisitedVertex struct {
 
 type Dijkstra struct {
 	graph   *Graph
-	visited map[string]*VisitedVertex // visited/calculated graph's vertices
+	visited *swiss.Map[string, *VisitedVertex] // visited/calculated graph's vertices
 	heap    *HeapMin
 }
 
 func (d *Dijkstra) inspectNeighbors(current string) {
-	for neighborVertexName, neighborWeight := range d.graph.Vertices[current] {
-		destinationWeight := d.visited[current].Weight + neighborWeight
+	neighbors, _ := d.graph.Vertices.Get(current)
+	currentVertex, _ := d.visited.Get(current)
+
+	neighbors.Iter(func(neighborVertexName string, neighborWeight int32) (stop bool) {
+		destinationWeight := currentVertex.Weight + neighborWeight
 
 		// if a vertex was visited earlier and new weight will be bigger that existing one
 		// then this path will be longer and it will be skipped
-		neighborVertex, ok := d.visited[neighborVertexName]
+		visitedNeighbor, ok := d.visited.Get(neighborVertexName)
+
 		if !ok {
-			neighborVertex = &VisitedVertex{}
-			d.visited[neighborVertexName] = neighborVertex
-		} else if d.visited[current].Weight+neighborWeight >= neighborVertex.Weight {
-			continue
+			visitedNeighbor = &VisitedVertex{}
+			d.visited.Put(neighborVertexName, visitedNeighbor)
+		} else if destinationWeight >= visitedNeighbor.Weight {
+			return
 		}
 
 		// accumulate weight
-		neighborVertex.Weight = destinationWeight
+		visitedNeighbor.Weight = destinationWeight
 
 		// increase path
-		neighborVertex.Path = d.visited[current].Path + neighborVertexName
+		visitedNeighbor.Path = currentVertex.Path + neighborVertexName
+
 		d.heap.Add(neighborVertexName, destinationWeight)
-	}
+
+		return false
+	})
 }
 
 func (d *Dijkstra) Calculate(from string) (weight int32, path string, err error) {
-	if _, ok := d.graph.Vertices[from]; !ok {
+	if _, ok := d.graph.Vertices.Get(from); !ok {
 		return 0, "", fmt.Errorf("%s does not exist in Graph", from)
 	}
 
 	nextVertexName := from
 	for {
-		currentVertex, ok := d.visited[nextVertexName]
+		currentVertex, ok := d.visited.Get(nextVertexName)
 		if !ok {
 			currentVertex = &VisitedVertex{Path: nextVertexName}
-			d.visited[nextVertexName] = currentVertex
+			d.visited.Put(nextVertexName, currentVertex)
 		}
 
 		currentVertex.IsCalculated = true
@@ -69,7 +78,7 @@ func (d *Dijkstra) Calculate(from string) (weight int32, path string, err error)
 func newDijkstra(graph *Graph) *Dijkstra {
 	return &Dijkstra{
 		graph:   graph,
-		visited: make(map[string]*VisitedVertex),
+		visited: swiss.NewMap[string, *VisitedVertex](100),
 		heap:    &HeapMin{tree: make([]*Item, 0)},
 	}
 }
