@@ -1,11 +1,12 @@
-### example of Dijkstra
+### Example of Dijkstra
 https://www.w3schools.com/dsa/dsa_algo_graphs_dijkstra.php
 
-### online Dijkstra Solver
+### Online Dijkstra Solver
 https://algo-dijkstra.vercel.app/index.html
 
-### using heap for searching next vertex
+### Using heap for searching next vertex
 https://tutorialhorizon.com/algorithms/dijkstras-shortest-path-algorithm-spt-adjacency-list-and-min-heap/
+https://www.geeksforgeeks.org/introduction-to-heap/
 
 ### Custom hash table
 1. https://benhoyt.com/writings/go-1brc/ (Solution 7)
